@@ -17,14 +17,31 @@ export default function ScissorLiftTable({ contentRef }) {
       return;
     }
 
-    let scene, camera, renderer, tableTop, scissorFront1, scissorFront2, scissorBack1, scissorBack2, base, tableGroup;
+    let scene, camera, renderer, tableTop, scissorFront1, scissorFront2, scissorBack1, scissorBack2, base, tableGroup, resizeObserver;
     try {
+      const getContainerSize = () => {
+        const container = canvasContainerRef.current;
+
+        if (!container) {
+          return { width: window.innerWidth, height: window.innerHeight };
+        }
+
+        const { width, height } = container.getBoundingClientRect();
+
+        return {
+          width: Math.max(Math.round(width) || 0, 320),
+          height: Math.max(Math.round(height) || 0, 320)
+        };
+      };
+
       scene = new THREE.Scene();
       sceneRef.current = scene;
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const initialSize = getContainerSize();
+      camera = new THREE.PerspectiveCamera(75, initialSize.width / initialSize.height, 0.1, 1000);
       cameraRef.current = camera;
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(initialSize.width, initialSize.height);
       rendererRef.current = renderer;
 
       if (!canvasContainerRef.current) {
@@ -163,15 +180,21 @@ export default function ScissorLiftTable({ contentRef }) {
       // Resize handler
       const handleResize = () => {
         try {
-          camera.aspect = window.innerWidth / window.innerHeight;
+          const nextSize = getContainerSize();
+
+          camera.aspect = nextSize.width / nextSize.height;
           camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setSize(nextSize.width, nextSize.height);
         } catch (e) {
           setError('Error in resize handler: ' + e.message);
         }
       };
 
       window.addEventListener('resize', handleResize);
+      if (typeof ResizeObserver !== 'undefined' && canvasContainerRef.current) {
+        resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(canvasContainerRef.current);
+      }
 
       // Animation loop
       const animate = () => {
@@ -188,6 +211,7 @@ export default function ScissorLiftTable({ contentRef }) {
       return () => {
         window.removeEventListener('scroll', handleScroll);
         window.removeEventListener('resize', handleResize);
+        if (resizeObserver) resizeObserver.disconnect();
         if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
 
         if (rendererRef.current) {
