@@ -6,7 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EasyLink</title>
     <link rel="icon" href="/favicon.ico" /> 
-    <script type="module" crossorigin src="/assets/index-CzO4Vj-J.js"></script>
+    <script>
+      (function () {
+        const redirect = window.location.search.match(/[?&]p=([^&]+)/);
+
+        if (!redirect) {
+          return;
+        }
+
+        const route = decodeURIComponent(redirect[1]).replace(/~and~/g, '&');
+        const newUrl = route + window.location.hash;
+        window.history.replaceState(null, null, newUrl);
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-D5B6cE0N.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-Bcn6Uw2l.css">
   </head>
   <body>
